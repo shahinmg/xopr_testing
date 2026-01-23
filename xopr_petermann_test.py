@@ -51,8 +51,9 @@ peter_geom = petermann_gdf.iloc[0].geometry
 #%%
 peter_latlon = petermann_gdf.to_crs(latlng.proj4_init)
 peter_geom_latlon = peter_latlon.iloc[0].geometry
+date_range = '2008-01-01T00:00:00Z/2025-01-01T00:00:00Z'
 
-stac_items = opr.query_frames(geometry=peter_geom_latlon, max_items=50)
+stac_items = opr.query_frames(geometry=peter_geom_latlon, date_range=date_range ,max_items=50)
 #%%
 # Plot a map of our loaded data over the selected region on an EPSG:3031 projection
 # peter_geom_latlon = peter_geom.to_crs(latlng.proj4_init)
@@ -122,10 +123,8 @@ def surface_bed_reflection_power(stac_item, opr=xopr.opr_access.OPRConnection())
     frame = opr.load_frame(stac_item, data_product='CSARP_standard')
     frame = frame.resample(slow_time='5s').mean()
 
-    try:
-        layers = opr.get_layers_db(frame, include_geometry=False)
-    except Exception as e:
-        print(f"Error retrieving layers: {e}")
+    layers = opr.get_layers(frame, source='auto', include_geometry=False)
+    if layers is None:
         return None
     
     # Re-pick surface and bed layers to ensure we're getting the peaks
@@ -141,9 +140,10 @@ def surface_bed_reflection_power(stac_item, opr=xopr.opr_access.OPRConnection())
         bed_repicked_twtt.rename('bed_twtt'),
         surface_power.rename('surface_power_dB'),
         bed_power.rename('bed_power_dB'),
-        ])
+        ],
+        compat='override')
 
-    flight_line_metadata = frame.drop_vars(['Data', 'Surface', 'Bottom'])
+    flight_line_metadata = frame.drop_vars(['Data', 'Surface'])
     reflectivity_dataset = xr.merge([reflectivity_dataset, flight_line_metadata])
 
     reflectivity_dataset = reflectivity_dataset.drop_dims(['twtt'])  # Remove the twtt dimension since everything has been flattened
@@ -153,4 +153,10 @@ def surface_bed_reflection_power(stac_item, opr=xopr.opr_access.OPRConnection())
 
     return reflectivity_dataset
 #%%
-reflectivity = surface_bed_reflection_power(stac_items.iloc[0], opr=opr)
+reflectivity = surface_bed_reflection_power(stac_items.iloc[1], opr=opr)
+fig, ax = plt.subplots(figsize=(8, 4))
+reflectivity['surface_power_dB'].plot(ax=ax, x='slow_time', label='Surface')
+reflectivity['bed_power_dB'].plot(ax=ax, x='slow_time', label='Bed')
+ax.set_ylabel('Power [dB]')
+ax.legend()
+plt.show()
