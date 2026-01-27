@@ -93,7 +93,7 @@ def extract_layer_peak_power(radar_ds, layer_twtt, margin_twtt):
     layer_twtt = layer_twtt.sel(slow_time=slice(t_start, t_end))
     radar_ds = radar_ds.sel(slow_time=slice(t_start, t_end))
     #layer_twtt = layer_twtt.interp(slow_time=radar_ds.slow_time, method='nearest')
-    layer_twtt = layer_twtt.reindex(slow_time=radar_ds.slow_time, method='nearest', tolerance=pd.Timedelta(seconds=1), fill_value=np.nan)
+    layer_twtt = layer_twtt.reindex(slow_time=radar_ds.slow_time, method='nearest', tolerance=pd.Timedelta(seconds=0.1), fill_value=np.nan)
     
     # Calculate the start and end TWTT for the margin
     start_twtt = layer_twtt - margin_twtt
@@ -153,10 +153,19 @@ def surface_bed_reflection_power(stac_item, opr=xopr.opr_access.OPRConnection())
 
     return reflectivity_dataset
 #%%
-reflectivity = surface_bed_reflection_power(stac_items.iloc[1], opr=opr)
+reflectivity = surface_bed_reflection_power(stac_items.loc['Data_20100420_03_009'], opr=opr)
+bed_power_grad = np.gradient( np.gradient(reflectivity['bed_power_dB']) ) 
+reflectivity['bed_power_grad'] = (('slow_time'), bed_power_grad)
+
 fig, ax = plt.subplots(figsize=(8, 4))
+ax2 = ax.twinx()
 reflectivity['surface_power_dB'].plot(ax=ax, x='slow_time', label='Surface')
 reflectivity['bed_power_dB'].plot(ax=ax, x='slow_time', label='Bed')
+reflectivity['bed_power_grad'].plot(ax=ax2, x='slow_time', label='grad',color='tab:green')
+
+
 ax.set_ylabel('Power [dB]')
 ax.legend()
+ax2.legend()
 plt.show()
+
