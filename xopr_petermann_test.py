@@ -158,14 +158,14 @@ bed_power_grad = np.gradient( np.gradient(reflectivity['bed_power_dB']) )
 reflectivity['bed_power_grad'] = (('slow_time'), bed_power_grad)
 
 fig, ax = plt.subplots(figsize=(8, 4))
-ax2 = ax.twinx()
+# ax2 = ax.twinx()
 reflectivity['surface_power_dB'].plot(ax=ax, x='slow_time', label='Surface')
 reflectivity['bed_power_dB'].plot(ax=ax, x='slow_time', label='Bed')
-reflectivity['bed_power_grad'].plot(ax=ax2, x='slow_time', label='grad',color='tab:green')
+# reflectivity['bed_power_grad'].plot(ax=ax2, x='slow_time', label='grad',color='tab:green')
 
 
 ax.set_ylabel('Power [dB]')
 ax.legend()
-ax2.legend()
+# ax2.legend()
 plt.show()
 
